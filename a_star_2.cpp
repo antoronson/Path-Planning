@@ -1,3 +1,21 @@
+/*
+# This is a simple A-star path planning algorithm that calculates the shortest path between the input position and output position.
+# The input parameters are room width, start and target positions, step size.
+# The output parameters are the path control points.
+# Path selection parameters : Nuclear distance between the current position and goal , floor map value( Pref. Always move forward)
+# Inital test with no fixed object was successfull. 
+# To add fixed object, random numbers are generated and corresponding block is filled with largest probability to make the column to not be preferred
+# Inital test with less number of fixed object was successfull but when the number of blocks are increased, the path starts rotating in the same control points.
+
+
+Goal:
+# To validate the path planning for 3D
+# To develop a stable path planning algorithm to be coupled with the v-rep software so that the input is the workspace and start and goal configuration of EE.
+# The step size is to be determined from the volume occupied by the EE.
+*/
+
+
+
 #include<iostream>
 #include<math.h>
 #include<iomanip>
@@ -21,10 +39,11 @@ using namespace std;
 */
 struct data
 {
-	int id;
-	int floor_map;
-	int n_id[8];
-	double probab[8];
+	int id;// In other words the corresponding floor map
+	int floor_map;// Respective value of floor map
+	int n_id[8];// Neighbouring blocks floor map 
+	double probab[8];// Corresponding Probability 
+	int p_choice;// Probability Choice(0....7)
 	
 };
 vector<data> my_data;
@@ -35,6 +54,7 @@ struct path
 	int id;
 	double xpos;
 	double ypos;
+	int p_c;// Value of p_choice
 };
 vector<path> my_path;
 
@@ -208,9 +228,32 @@ int main()
 		local_path.xpos = (temp_x/dx);
 		local_path.ypos = (temp_y/dy);
 		my_path.push_back(local_path);
+		//my_floor = next_floor;
+		count = 0;
+		bool value = false;
+		for (int i = 0; i < my_path.size();i++)
+		{
+			int size = my_path.size()
+			if(next_floor == my_path.)
+				count++;
+			if (count > 2)
+			{
+				min = min+1;
+				next_floor = my_data[my_floor].n_id[min];
+				temp_x = next_floor / nx;
+				temp_y = next_floor % nx;
+				my_path[size - 1].xpos = temp_x;
+				my_path[size - 1].ypos = temp_y;
+				value = true;
+				break;			
+			}
+			if (value == true)
+			{
+				value = false;
+				break;
+			}
+		}
 		my_floor = next_floor;
-		cout<<next_floor<<"\t"<<target_floor<<endl;
-		
 	}
 	
 
