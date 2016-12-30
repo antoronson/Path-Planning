@@ -87,9 +87,10 @@ int main()
 
 	
 	// Writing output to file
-	ofstream myfile;
-	myfile.open("prob.txt");
-	
+	//ofstream myfile;
+	//myfile.open("prob.txt");
+	ofstream f_map;
+	f_map.open("floor_map.txt");
 	// Path Determination Parameters
 	double temp_x, temp_y;	// Variable to calculate the co ordinates and update the vector my_path
 	int temp_x_floor, temp_y_floor;	// Variable to store the current calculated position for every iterative step.
@@ -127,30 +128,41 @@ int main()
 			room[i][j] = 0;
 		}
 	}
-
-	room[x_fin][y_fin] = 1;
 	collision(room, nx, ny, x_init, y_init, x_fin, y_fin, n);
+	
+	
+	room[x_init - 1][y_init - 1] = 1;
+
 	floor_map(room, nx, ny);
 	
-	
+	for(int i = 0; i < nx; i++)
+	{
+		for(int j = 0; j < ny; j++)
+		{
+			f_map<<room[i][j]<<",";
+		}
+		f_map<<endl;
+	}
 	
 	for(int i = 0; i < (nx * ny); ++i)// Vector initialization to fix the size.
 	{
 		data local_data;
 		local_data.id = i;
 		local_data.floor_map = room[i/nx][i%ny];
+		local_data.p_choice = 0;
 		my_data.push_back(local_data);
 	}
 	
 	// For every cell, we update a neighbour list with probability assigned to the target position distance.
 	for(int i = 0; i < my_data.size(); ++i)
 	{
-		//cout<<i<<endl;
-		if (my_data[i].id == i)
+		cout<<i<<endl;
+		if ((my_data[i].id == i) && ( my_data[i].floor_map < (nx*ny)))
 		{
 			count = 0;
 			x_temp = i / nx;
 			y_temp = i % nx;
+		//	cout<<"Success"<<my_data[i].id<<endl;
 			//cout<<x_temp<<"\t"<<y_temp<<endl;
 			// Create a local matrix(2*8) => floor id calculated and corresponding probability
 			for(int ii = 0; ii < 3; ii++)
@@ -161,53 +173,74 @@ int main()
 					//cout<<ii<<"\t"<<jj<<endl;
 					if((ii == 1) && (jj == 1))
 					{
+						//The execution is passed when the position is my current position.
 						continue;
 					}
 					else
 					{
-						x_pos = x_temp + x_n[ii];
-						y_pos = y_temp + y_n[jj];
-						//cout<<x_temp<<"\t"<<y_temp<<"\t"<<x_pos<<"\t"<<y_pos<<endl;
-						neigh[count] = ((x_temp + x_n[ii])*nx)+(y_temp + y_n[jj]);
-						prob[count] = sqrt(pow(((x_pos/dx) - (x_fin/dx)),2) + pow(((y_pos/dy) - (y_fin/dy)),2));
-						if(my_data[(x_pos * nx)+y_pos].floor_map > my_data[(x_temp*nx)+y_temp].floor_map)
-							prob[count] = prob[count]*2;
-						if(my_data[(x_pos * nx)+y_pos].floor_map < my_data[(x_temp*nx)+y_temp].floor_map)
-							prob[count] = prob[count]/2;
-						if(my_data[(x_pos * nx)+y_pos].floor_map == my_data[(x_fin*nx)+y_fin].floor_map)
-							prob[count] = prob[count]/4;
-//						cout<<x_fin<<"\t"<<y_fin<<"\t"<<x_pos<<"\t"<<y_pos<<"\t"<<prob[count]<<endl;
-						if ((x_pos < 0)||(y_pos < 0)||(x_pos >= nx)||(y_pos >= ny))
+						
+						// These guys are not humans. They are machines. Let me not confuse them
+						
+						if ( x_temp ==0 || x_temp >= (nx-1) || y_temp == 0 || y_temp >= (ny-1))
 						{
+							x_pos = x_temp + x_n[ii];
+							y_pos = y_temp + y_n[jj];	// My Neighbour started calculating
 							
-							neigh[count] = (nx*ny) + i;
-							prob[count] = 100 + i;
+							if(x_pos < 0 || x_pos >=nx || y_pos < 0 || y_pos >= ny )
+							{
+									neigh[count] = - ((nx*ny) + (x_pos * nx) + y_pos);
+									prob[count] = -((nx*ny) + (x_pos * nx) + y_pos);
+									
+							}
+							else
+							{
+								neigh[count] = (x_pos * nx) + y_pos;
+								prob[count] = sqrt(pow((x_pos - x_fin),2) + pow((y_pos - y_fin),2));// Distance based probability
+							
+								if (my_data[neigh[count]].floor_map > my_data[i].floor_map)
+									prob[count] = prob[count]/2;			
+						
+								if ( my_data[neigh[count]].floor_map < my_data[i].floor_map)
+									prob[count] = prob[count] * 2;
+						
+								if (my_data[neigh[count]].floor_map == my_data[(x_fin*nx)+y_fin].floor_map)
+									prob[count] = prob[count]/4;
+							}
+							
 						}
-							//prob[count] = 100 + count;
+						else
+						{
+							x_pos = x_temp + x_n[ii];
+							y_pos = y_temp + y_n[jj];	// My Neighbour started calculating
+							neigh[count] = (x_pos * nx) + y_pos;
+							prob[count] = sqrt(pow((x_pos - x_fin),2) + pow((y_pos - y_fin),2));// Distance based probability
+							
+							if (my_data[neigh[count]].floor_map > my_data[i].floor_map)
+								prob[count] = prob[count]/2;			
+						
+							if ( my_data[neigh[count]].floor_map < my_data[i].floor_map)
+								prob[count] = prob[count] * 2;
+						
+							if (my_data[neigh[count]].floor_map == my_data[(x_fin*nx)+y_fin].floor_map)
+								prob[count] = prob[count]/4;
+							
+						}
+
 						count++;
 					}
 				}
 			}
 			//cout<<"\n";
 		}
-		// Sorting neigh and prob array.
+		// Sorting neigh and prob array and store it in vector.
 		sort(neigh, prob, count-1);
-		myfile<<"\t";
-		for(int ii = 0; ii < 8; ii++)
-		{
-			myfile<<neigh[ii]<<"\t";
-		}
-		myfile<<"\t";
-		for(int ii = 0; ii < 8; ii++)
-		{
-			myfile<<prob[ii]<<"\t";
-		}
-		myfile<<"\t";
+
 		for( int j = 0; j < 8; j++)
 		{
 			my_data[i].n_id[j] = neigh[j];
 			my_data[i].probab[j] = prob[j];
 		}
+		//cout<<"Again Success"<<endl;
 	}
 	
 	//Calculating the path.
@@ -218,43 +251,37 @@ int main()
 	local_path.ypos = (y_init/dy);
 	my_path.push_back(local_path);
 	int min = 0;
+	int path_f[nx*ny];
+	for(int i = 0; i < (nx*ny); i++)
+		path_f[i] = 0;
+	
 	
 	while (my_floor != target_floor)
 	{
+		min = 0;
+		
 		next_floor = my_data[my_floor].n_id[min];
+
+		while ((my_data[my_floor].probab[min] < 0) || path_f[next_floor]>0)
+		{
+			min++;
+			next_floor = my_data[my_floor].n_id[min];
+			my_data[my_floor].p_choice = min;
+			if ( min >= 8)
+				cout<<" Sorry No Path"<<endl;
+		}
 		temp_x = next_floor / nx;
 		temp_y = next_floor % nx;
 		path local_path;
 		local_path.xpos = (temp_x/dx);
 		local_path.ypos = (temp_y/dy);
+		local_path.p_c = next_floor;
 		my_path.push_back(local_path);
-		//my_floor = next_floor;
-		count = 0;
-		bool value = false;
-		for (int i = 0; i < my_path.size();i++)
-		{
-			int size = my_path.size()
-			if(next_floor == my_path.)
-				count++;
-			if (count > 2)
-			{
-				min = min+1;
-				next_floor = my_data[my_floor].n_id[min];
-				temp_x = next_floor / nx;
-				temp_y = next_floor % nx;
-				my_path[size - 1].xpos = temp_x;
-				my_path[size - 1].ypos = temp_y;
-				value = true;
-				break;			
-			}
-			if (value == true)
-			{
-				value = false;
-				break;
-			}
-		}
+		path_f[next_floor]++;
+		cout<<(temp_y/dy)<<"\t"<<(temp_x/dx)<<endl;
 		my_floor = next_floor;
 	}
+	
 	
 
 	
@@ -299,29 +326,22 @@ void floor_map(double **room, int nx, int ny)
 
 	int count = 0;	// to check if all the elements of matrix room are non zero
 	count = my_count(room,nx,ny);// Function call to check if all the elements in a matrix are non zero 
-	//cout<<count<<endl;
 	while (count != 0)// When matrix has zero elements
 	{
 		for(int i = 0; i<nx; i++)
 		{
 			for(int j = 0; j<ny; j++)
 			{
-				//cout<<i<<"\t"<<j<<"\t"<<endl;
-				//cout<<"------------------------"<<endl;
-				if((room[i][j] != 0))// I locate a non zero element
+				if((room[i][j] != 0) && (room[i][j] < (nx*ny)))// I locate a non zero element
 				{					
 					for(int k = 0; k<3; k++)
 					{
-						//cout<<"Test 5"<<endl;
 						for(int l = 0; l<3; l++)
 						{
-							//cout<<"Test 6"<<"\t"<<i<<"\t"<<"\t"<<j<<"\t"<<x_part[k]<<"\t"<<y_part[l]<<"\t"<<endl;
 							if (((i+(x_part[k]))>=0) && ((i+(x_part[k])) <nx) && ((j+(y_part[l])) >= 0) && ((j+(y_part[l]))< ny))// access the array x_part and y_part to access the neighbours. (Currently 2D)
 							{
-								//cout<<"Test 4"<<endl;
 								if((room[i+x_part[k]][j+y_part[l]] ==0))// When a neighbour cell is zero
 								{
-									//cout<<"Test 3"<<endl;
 									room[i+x_part[k]][j+y_part[l]] = room[i][j] + 1;// Add 1 to my cell and update the neighbour cell
 								}
 							}
@@ -349,18 +369,22 @@ int my_count(double **room, int nx, int ny)// Function to check number of zeros 
 void collision(double **room, int nx, int ny,int x_init,int y_init,int x_fin,int y_fin, int n)
 {
 	int x_t, y_t;
-	srand(time(NULL));
-	x_t = rand()%nx+0;
-	srand(time(NULL));
-	y_t = rand()%ny+0;
+
 	int count = 0;
+	srand(time(NULL));
 	while(count < n)
 	{
-		if(((x_t != x_init)  && (y_t != y_init)) || ((x_t != x_fin) && (y_t != y_fin)))
+		x_t = rand() % nx + 0;
+		y_t = rand() % ny + 0;
+		
+		if ( room [x_t][y_t] == 0)
 		{
-			room[x_t][y_t] = (nx*ny) + ((x_t*nx) + y_t);
+			if( (x_t != (x_fin - 1)) && (y_t != (y_fin - 1)))
+			{
+				room[x_t][y_t] = -((x_t * nx) + ny);
+				count = count + 1;
+			}
 		}
-		count = count + 1;
 	}
 }
 
