@@ -1,0 +1,2 @@
+./path
+gnuplot Time.gp
